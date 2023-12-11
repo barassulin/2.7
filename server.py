@@ -1,8 +1,9 @@
 """
 Author: Bar Assulin
-Date: 19.11.2023
-Description: server.py for cyber2.6
+Date: 11.12.2023
+Description: server.py for cyber2.7
 """
+
 import protocol
 import socket
 import os
@@ -22,13 +23,11 @@ LOG_DIR = 'log'
 LOG_FILE = LOG_DIR + '/server.log'
 
 def recv_protocol(message):
-
     """
-        while protocol.recive_protocol(message):
-        message = client_socket.recv(MAX_PACKET).decode()
-        message=message[2:]
+    while protocol.recive_protocol(message):
+    message = client_socket.recv(MAX_PACKET).decode()
+    message=message[2:]
     """
-
     return message
 
 def dir_request(path):
@@ -38,7 +37,7 @@ def dir_request(path):
     returns list of files
     returns: files_list
     """
-    files_list = glob.glob(r''+path+'*.*')
+    files_list = glob.glob(path+'\\*.*')
     return files_list
 
 
@@ -48,7 +47,7 @@ def delete_request(path):
     get: path
     deletes the file
     """
-    os.remove(r'' +path+'.txt')
+    os.remove(path)
 
 
 
@@ -68,9 +67,12 @@ def execute_request(path):
     returns list of files
     returns: files_list
     """
-    subprocess.call(r''+path+'.exe')
-    """need to return if works or not"""
-    return files_list
+    comment = "works"
+    try:
+        subprocess.call(path)
+    except Exception as err:
+        comment = "dosent work"
+    return comment
 
 
 def take_screenshot_request():
@@ -79,8 +81,13 @@ def take_screenshot_request():
     get: path
     deletes the file
     """
-    image = pyautogui.screenshot()
-    image.save(r'screen.jpg')
+    try:
+        image = pyautogui.screenshot()
+        image.save("screen.jpg")
+        return "ok. taken"
+    except Exception as err:
+        return "couldnt take a pic"
+
 
 
 def send_photo_request():
@@ -116,13 +123,15 @@ def main():
                         client_socket.send(protocol.send_protocol("enter path").encode())
                         path = client_socket.recv(MAX_PACKET).decode()
                         recv_protocol(path)
-                        comment = dir_request(path)
+                        comment=",".join(dir_request(path))
+
                     elif request == "DELETE":
                         client_socket.send(protocol.send_protocol("enter path").encode())
                         path = client_socket.recv(MAX_PACKET).decode()
                         recv_protocol(path)
                         delete_request(path)
                         comment = "ok. deleted"
+
                     elif request == "COPY":
                         client_socket.send(protocol.send_protocol("enter path you want too copy from").encode())
                         path_to_copy = client_socket.recv(MAX_PACKET).decode()
@@ -132,16 +141,20 @@ def main():
                         recv_protocol(path_to_paste)
                         copy_request(path_to_copy,path_to_paste)
                         comment = "ok. coppied"
+
                     elif request == "EXECUTE":
                         client_socket.send(protocol.send_protocol("enter path").encode())
                         path = client_socket.recv(MAX_PACKET).decode()
                         recv_protocol(path)
                         comment = execute_request(path)
+
                     elif request == "TAKE SCREENSHOT":
-                        take_screenshot_request()
-                        comment = "ok. taken"
+                        comment = take_screenshot_request()
+                        print(comment)
+
                     elif request == "SEND PHOTO":
                         comment = send_photo_request()
+
                     else:
                         comment = "enter one request from the options: DIR/DELETE/COPY/EXECUTE/TAKE SCREENSHOT/SEND PHOTO/EXIT"
 
