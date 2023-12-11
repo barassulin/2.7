@@ -12,6 +12,7 @@ import glob
 import shutil
 import pyautogui
 import subprocess
+import base64
 
 QUEUE_LEN = 1
 MAX_PACKET = 1024
@@ -97,9 +98,11 @@ def send_photo_request():
         returns list of files
         returns: files_list
         """
-     with open("filepath/filename", "rb") as f:
-         image=f.read()
-     return image
+
+     with open("C:\cyber\cyber2.7\screen.jpg", "rb") as imageFile:
+         comment = base64.b64encode(imageFile.read())
+     comment = comment.decode()
+     return comment
 
 
 def main():
