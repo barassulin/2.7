@@ -1,7 +1,7 @@
 """
 Author: Bar Assulin
-Date: 19.11.2023
-Description: server.py for cyber2.6
+Date: 11.12.2023
+Description: server.py for cyber2.7
 """
 
 import socket
@@ -37,7 +37,6 @@ def main():
         msg = input("pls enter a message: ")
         logging.debug("sending msg request" + msg)
         my_socket.send(protocol.send_protocol(msg).encode())
-
 
         response = my_socket.recv(MAX_PACKET).decode()
         recv_protocol(response,my_socket)
