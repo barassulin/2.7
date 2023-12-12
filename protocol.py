@@ -1,38 +1,17 @@
-
+"""
+Author: Bar Assulin
+Date: 11.12.2023
+Description: server.py for cyber2.7
+"""
 
 def send_protocol(message):
-
-    """
-
     length = str(len(message))
-    zfill_length = length.zfill(2)
+    zfill_length = length.zfill(10)
     message = zfill_length + message
-    """
-
     return message
 
-def recive_protocol(message):
-    got=message
-    """
-    got = True
-    length = int(message[0:2],16)
-    length2 =len(message[2:])
-    if length==length2:
-        got = False
-    
-    """
-    return got
-
-
-
-
-
-
-
-"""if works without add this:"""
-def recv_parameters(message):
-    client_socket.send(send_protocol(message).encode())
-    parameter = client_socket.recv(MAX_PACKET).decode()
-    recv_protocol(parameter)
-    return parameter
+def recv_protocol(socket):
+    length = socket.recv(10).decode()
+    message = socket.recv(int(length)).decode()
+    return message
 
