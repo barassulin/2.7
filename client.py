@@ -20,14 +20,18 @@ LOG_DIR = 'log'
 LOG_FILE = LOG_DIR + '/client.log'
 from PIL import Image
 
-def recv_protocol(message,my_socket):
-    """
-        while protocol.recive_protocol(message):
-        message = my_socket.recv(MAX_PACKET).decode()
-        message=message[2:]
-    """
+def send_par(response,my_socket):
+    print("server responded with: " + response)
+    path = input("pls enter a message: ")
+    my_socket.send(protocol.send_protocol(path).encode())
+    response = protocol.recv_protocol(my_socket)
+    return response
 
-    return message
+def check_msg(msg):
+    if msg == "DIR" or msg == "DELETE" or msg == "COPY" or msg == "EXECUTE" or msg == "TAKE SCREENSHOT" or msg == "SEND PHOTO":
+        return True
+    else:
+        return False
 
 def main():
     """
@@ -38,74 +42,36 @@ def main():
     try:
         my_socket.connect((IP, PORT))
         msg = input("pls enter a message: ")
+        while check_msg(msg) != True:
+            print("enter one request from the options: DIR/DELETE/COPY/EXECUTE/TAKE SCREENSHOT/SEND PHOTO/EXIT")
+            msg = input("pls enter a message: ")
         logging.debug("sending msg request" + msg)
         my_socket.send(protocol.send_protocol(msg).encode())
-
-        response = my_socket.recv(MAX_PACKET).decode()
-        recv_protocol(response,my_socket)
+        response = protocol.recv_protocol(my_socket)
         logging.debug("getting response" + response)
         while response != "EXIT":
-            if msg == "DIR":
-                print("server responded with: " + response)
-                path = input("pls enter a message: ")
-                my_socket.send(protocol.send_protocol(path).encode())
-                response = my_socket.recv(MAX_PACKET).decode()
-                recv_protocol(response, my_socket)
-
-            elif msg == "DELETE":
-                print("server responded with: " + response)
-                path = input("pls enter a message: ")
-                my_socket.send(protocol.send_protocol(path).encode())
-                response = my_socket.recv(MAX_PACKET).decode()
-                recv_protocol(response, my_socket)
+            if msg == "DIR" or msg == "DELETE" or msg == "EXECUTE":
+                response=send_par(response,my_socket)
 
             elif msg == "COPY":
-                print("server responded with: " + response)
-                path = input("pls enter a message: ")
-                my_socket.send(protocol.send_protocol(path).encode())
-                response = my_socket.recv(MAX_PACKET).decode()
-                recv_protocol(response,my_socket)
-                print("server responded with: " + response)
-                path = input("pls enter a message: ")
-                my_socket.send(protocol.send_protocol(path).encode())
-                response = my_socket.recv(MAX_PACKET).decode()
-                recv_protocol(response, my_socket)
-
-            elif msg == "EXECUTE":
-                print("server responded with: " + response)
-                path = input("pls enter a message: ")
-                my_socket.send(protocol.send_protocol(path).encode())
-                response = my_socket.recv(MAX_PACKET).decode()
-                recv_protocol(response, my_socket)
+                response = send_par(response,my_socket)
+                response = send_par(response,my_socket)
 
             elif msg == "SEND PHOTO":
-                """
-                response=response.encode()
-                """
-
                 imgdata = base64.b64decode(response)
-                filename = 'some_image.jpg'  # I assume you have a way of picking unique filenames
+                filename = 'image.jpg'
                 with open(filename, 'wb') as f:
                     f.write(imgdata)
 
                 im = Image.open(filename)
                 im.show()
 
-
-
-
             if (msg!="SEND PHOTO"):
                 print("server responded with: " + response)
-            """
-                else:
-                    image = Image.open(r"C:\cyber\cyber2.7\received_image.jpg")
-                    im.show()
-            """
-
 
             msg = input("pls enter a message: ")
             my_socket.send(protocol.send_protocol(msg).encode())
-            response = my_socket.recv(MAX_PACKET).decode()
+            response = protocol.recv_protocol(my_socket)
     except socket.error as error:
         logging.error("received socket error" + str(error))
         print("socket error:" + str(error))
@@ -118,4 +84,14 @@ if __name__ == "__main__":
     if not os.path.isdir(LOG_DIR):
         os.makedirs(LOG_DIR)
     logging.basicConfig(format=LOG_FORMAT, filename=LOG_FILE, level=LOG_LEVEL)
+
+    assert protocol.send_protocol("message") == "0000000007message"
+    assert check_msg("DIR") == True
+    assert check_msg("DELETE") == True
+    assert check_msg("COPY") == True
+    assert check_msg("EXECUTE") == True
+    assert check_msg("TAKE SCREENSHOT") == True
+    assert check_msg("SEND PHOTO") == True
+    assert check_msg("hh") != True
+
     main()
