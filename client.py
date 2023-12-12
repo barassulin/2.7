@@ -11,27 +11,42 @@ import logging
 import protocol
 from PIL import Image
 
-MAX_PACKET = 1024
 IP = "127.0.0.1"
 PORT = 1729
 LOG_FORMAT = '%(levelname)s | %(asctime)s | %(processName)s | %(message)s'
 LOG_LEVEL = logging.DEBUG
 LOG_DIR = 'log'
 LOG_FILE = LOG_DIR + '/client.log'
-from PIL import Image
 
-def send_par(response,my_socket):
+
+def send_par(response, my_socket):
+    """
+    sending to server a parameter
+    :param response: what the server asked
+    :param my_socket: the socket
+    :return: answer from client
+    """
     print("server responded with: " + response)
     path = input("pls enter a message: ")
+    logging.debug("sending path as requested" + path)
     my_socket.send(protocol.send_protocol(path).encode())
     response = protocol.recv_protocol(my_socket)
+    logging.debug("getting msg request" + response)
     return response
 
+
 def check_msg(msg):
-    if msg == "DIR" or msg == "DELETE" or msg == "COPY" or msg == "EXECUTE" or msg == "TAKE SCREENSHOT" or msg == "SEND PHOTO":
+    """
+    check if the function exists
+    :param msg: the function
+    :return: if exists or not
+    """
+    if (msg == "DIR" or msg == "DELETE" or msg == "COPY" or msg == "EXECUTE" or msg == "TAKE SCREENSHOT" or
+            "SEND PHOTO" == msg):
         return True
     else:
         return False
+
 
 def main():
     """
@@ -42,7 +57,7 @@ def main():
     try:
         my_socket.connect((IP, PORT))
         msg = input("pls enter a message: ")
-        while check_msg(msg) != True:
+        while not check_msg(msg):
             print("enter one request from the options: DIR/DELETE/COPY/EXECUTE/TAKE SCREENSHOT/SEND PHOTO/EXIT")
             msg = input("pls enter a message: ")
         logging.debug("sending msg request" + msg)
@@ -51,31 +66,37 @@ def main():
         logging.debug("getting response" + response)
         while response != "EXIT":
             if msg == "DIR" or msg == "DELETE" or msg == "EXECUTE":
-                response=send_par(response,my_socket)
+                response = send_par(response, my_socket)
 
             elif msg == "COPY":
-                response = send_par(response,my_socket)
-                response = send_par(response,my_socket)
+                response = send_par(response, my_socket)
+                response = send_par(response, my_socket)
 
             elif msg == "SEND PHOTO":
-                imgdata = base64.b64decode(response)
-                filename = 'image.jpg'
-                with open(filename, 'wb') as f:
-                    f.write(imgdata)
+                if response != "error":
+                    imgdata = base64.b64decode(response)
+                    filename = 'image.jpg'
+                    with open(filename, 'wb') as f:
+                        f.write(imgdata)
+                    im = Image.open(filename)
+                    im.show()
+                else:
+                    print("there is no pics. take a screenshot first")
 
-                im = Image.open(filename)
-                im.show()
-
-            if (msg!="SEND PHOTO"):
+            if msg != "SEND PHOTO":
                 print("server responded with: " + response)
 
             msg = input("pls enter a message: ")
+            logging.debug("sending msg" + msg)
             my_socket.send(protocol.send_protocol(msg).encode())
             response = protocol.recv_protocol(my_socket)
     except socket.error as error:
         logging.error("received socket error" + str(error))
         print("socket error:" + str(error))
-
+    except KeyboardInterrupt as error:
+        my_socket.send(protocol.send_protocol("EXIT").encode())
+        logging.error("an error" + str(error))
+        print("an error:" + str(error))
     finally:
         my_socket.close()
 
@@ -86,12 +107,12 @@ if __name__ == "__main__":
     logging.basicConfig(format=LOG_FORMAT, filename=LOG_FILE, level=LOG_LEVEL)
 
     assert protocol.send_protocol("message") == "0000000007message"
-    assert check_msg("DIR") == True
-    assert check_msg("DELETE") == True
-    assert check_msg("COPY") == True
-    assert check_msg("EXECUTE") == True
-    assert check_msg("TAKE SCREENSHOT") == True
-    assert check_msg("SEND PHOTO") == True
-    assert check_msg("hh") != True
+    assert check_msg("DIR")
+    assert check_msg("DELETE")
+    assert check_msg("COPY")
+    assert check_msg("EXECUTE")
+    assert check_msg("TAKE SCREENSHOT")
+    assert check_msg("SEND PHOTO")
+    assert not check_msg("hh")
 
     main()
