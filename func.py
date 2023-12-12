@@ -1,13 +1,17 @@
+"""
+Author: Bar Assulin
+Date: 11.12.2023
+Description: server.py for cyber2.7
+"""
 
-import protocol
-import socket
+
 import os
-import logging
 import glob
 import shutil
 import pyautogui
 import subprocess
 import base64
+
 
 def dir_request(path):
     """
@@ -17,7 +21,7 @@ def dir_request(path):
     :returns: files_list
     """
     files_list = glob.glob(path+'\\*.*')
-    files_list=",".join(files_list)
+    files_list = ",".join(files_list)
     return files_list
 
 
@@ -29,13 +33,15 @@ def delete_request(path):
     """
     os.remove(path)
 
-def copy_request(C1,C2):
+
+def copy_request(c1, c2):
     """
     get path to a file and to the place the client wants to copy the file in to
-    get: C1,C2
-    copys the file (from C1) to another place (C2)
+    get: c1,c2
+    copys the file (from c1) to another place (c2)
     """
-    shutil.copy(r''+C1, r''+C2)
+    shutil.copy(r''+c1, r''+c2)
+
 
 def execute_request(path):
     """
@@ -46,7 +52,7 @@ def execute_request(path):
     try:
         subprocess.call(path)
     except Exception as err:
-        comment = "dosent work"
+        comment = "error: " + str(err)
     return comment
 
 
@@ -60,14 +66,15 @@ def take_screenshot_request():
         image.save("screen.jpg")
         return "ok. taken"
     except Exception as err:
-        return "couldnt take a pic"
+        return "couldnt take a pic: " + str(err)
+
 
 def send_photo_request():
     """
     open to the client the photo he took
     :return: the photo
     """
-    if os.path.isfile("screen.jpg")==True:
+    if os.path.isfile("screen.jpg"):
         with open("screen.jpg", "rb") as imageFile:
             comment = base64.b64encode(imageFile.read())
         comment = comment.decode()
