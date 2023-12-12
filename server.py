@@ -13,97 +13,27 @@ import shutil
 import pyautogui
 import subprocess
 import base64
-
+import func
 QUEUE_LEN = 1
-MAX_PACKET = 1024
-NAME = "need to get from client"
-NAME2= "need to get from client,name of file"
 LOG_FORMAT = '%(levelname)s | %(asctime)s | %(processName)s | %(message)s'
 LOG_LEVEL = logging.DEBUG
 LOG_DIR = 'log'
 LOG_FILE = LOG_DIR + '/server.log'
 
-def recv_protocol(message):
-    """
-    while protocol.recive_protocol(message):
-    message = client_socket.recv(MAX_PACKET).decode()
-    message=message[2:]
-    """
-    return message
+def get_par(client_socket,string):
+    client_socket.send(protocol.send_protocol(string).encode())
+    msg = protocol.recv_protocol(client_socket)
+    return msg
 
-def dir_request(path):
-    """
-    get path
-    get: path
-    returns list of files
-    returns: files_list
-    """
-    files_list = glob.glob(path+'\\*.*')
-    return files_list
+def check_par_file(par):
+    if os.path.isfile(par) != True:
+        par = "error"
+    return par
 
-
-def delete_request(path):
-    """
-    get path to a file
-    get: path
-    deletes the file
-    """
-    os.remove(path)
-
-
-
-def copy_request(C1,C2):
-    """
-    get path to a file and to the place the client wants to copy the file in to
-    get: C1,C2
-    copys the file (from C1) to another place (C2)
-    """
-    shutil.copy(r''+C1, r''+C2)
-
-
-def execute_request(path):
-    """
-    get path
-    get: path
-    returns list of files
-    returns: files_list
-    """
-    comment = "works"
-    try:
-        subprocess.call(path)
-    except Exception as err:
-        comment = "dosent work"
-    return comment
-
-
-def take_screenshot_request():
-    """
-    get path to a file
-    get: path
-    deletes the file
-    """
-    try:
-        image = pyautogui.screenshot()
-        image.save("screen.jpg")
-        return "ok. taken"
-    except Exception as err:
-        return "couldnt take a pic"
-
-
-
-def send_photo_request():
-     """
-        get path
-        get: path
-        returns list of files
-        returns: files_list
-        """
-
-     with open("C:\cyber\cyber2.7\screen.jpg", "rb") as imageFile:
-         comment = base64.b64encode(imageFile.read())
-     comment = comment.decode()
-     return comment
-
+def check_par_dir(par):
+    if os.path.isdir(par) != True:
+        par = "error"
+    return par
 
 def main():
     """
@@ -118,53 +48,53 @@ def main():
         while True:
             client_socket, client_address = my_socket.accept()
             try:
-                request = client_socket.recv(MAX_PACKET).decode()
-                recv_protocol(request)
+                request = protocol.recv_protocol(client_socket)
                 logging.debug("getting request" + request)
                 while request != "EXIT":
                     if request == "DIR":
-                        client_socket.send(protocol.send_protocol("enter path").encode())
-                        path = client_socket.recv(MAX_PACKET).decode()
-                        recv_protocol(path)
-                        comment=",".join(dir_request(path))
+                        path = get_par(client_socket,"enter path")
+                        path = check_par_dir(path)
+                        if path == "error":
+                            comment = "error, the path does not exist"
+                        else:
+                            comment=func.dir_request(path)
 
                     elif request == "DELETE":
-                        client_socket.send(protocol.send_protocol("enter path").encode())
-                        path = client_socket.recv(MAX_PACKET).decode()
-                        recv_protocol(path)
-                        delete_request(path)
-                        comment = "ok. deleted"
+                        path = get_par(client_socket,"enter path")
+                        path = check_par_file(path)
+                        if path == "error":
+                            comment = "error, the path does not exist"
+                        else:
+                            func.delete_request(path)
+                            comment = "ok. deleted"
 
                     elif request == "COPY":
-                        client_socket.send(protocol.send_protocol("enter path you want too copy from").encode())
-                        path_to_copy = client_socket.recv(MAX_PACKET).decode()
-                        recv_protocol(path_to_copy)
-                        client_socket.send(protocol.send_protocol("enter path you want too copy in to").encode())
-                        path_to_paste = client_socket.recv(MAX_PACKET).decode()
-                        recv_protocol(path_to_paste)
-                        copy_request(path_to_copy,path_to_paste)
-                        comment = "ok. coppied"
+                        path_to_copy = get_par(client_socket,"enter path you want too copy from")
+                        path_to_copy=check_par_file(path_to_copy)
+                        path_to_paste = get_par(client_socket,"enter path you want too copy in to")
+                        path_to_paste = check_par_dir(path_to_paste)
+                        if path_to_paste == "error" or path_to_copy == "error":
+                            comment = "error, the path does not exist"
+                        else:
+                            func.copy_request(path_to_copy,path_to_paste)
+                            comment = "ok. coppied"
 
                     elif request == "EXECUTE":
-                        client_socket.send(protocol.send_protocol("enter path").encode())
-                        path = client_socket.recv(MAX_PACKET).decode()
-                        recv_protocol(path)
-                        comment = execute_request(path)
+                        path = get_par(client_socket,"enter path")
+                        comment = func.execute_request(path)
 
                     elif request == "TAKE SCREENSHOT":
-                        comment = take_screenshot_request()
-                        print(comment)
+                        comment = func.take_screenshot_request()
 
                     elif request == "SEND PHOTO":
-                        comment = send_photo_request()
+                        comment = func.send_photo_request()
 
                     else:
                         comment = "enter one request from the options: DIR/DELETE/COPY/EXECUTE/TAKE SCREENSHOT/SEND PHOTO/EXIT"
 
                     logging.debug("sending comment" + comment)
                     client_socket.send(protocol.send_protocol(comment).encode())
-                    request = client_socket.recv(MAX_PACKET).decode()
-                    recv_protocol(request)
+                    request = protocol.recv_protocol(client_socket)
                     logging.debug("getting request" + request)
 
             except socket.error as err:
@@ -190,5 +120,34 @@ if __name__ == "__main__":
     if not os.path.isdir(LOG_DIR):
         os.makedirs(LOG_DIR)
     logging.basicConfig(format=LOG_FORMAT, filename=LOG_FILE, level=LOG_LEVEL)
+
+    assert protocol.send_protocol("message") == "0000000007message"
+
+    os.makedirs("C:\Cyber check 2.7 new")
+    os.makedirs("C:\Cyber check 2 2.7 new")
+    with open(r'C:\Cyber check 2.7 new\demofile1.txt', 'a') as fp:
+        fp.write('This is first line')
+        pass
+    with open(r'C:\Cyber check 2.7 new\demofile2.txt', 'a') as fp:
+        pass
+
+    filepath="C:\Cyber check 2.7 new\demofile2.txt"
+
+    assert func.dir_request("C:\Cyber check 2.7 new") == 'C:\Cyber check 2.7 new\demofile1.txt,C:\Cyber check 2.7 new\demofile2.txt'
+
+    if os.path.isfile(filepath)==True:
+        func.delete_request("C:\Cyber check 2.7 new\demofile2.txt")
+    assert os.path.isfile(filepath)!=True
+
+    filepath = "C:\Cyber check 2.7 new\demofile1.txt"
+    filepath2 = "C:\Cyber check 2 2.7 new\demofile1.txt"
+    if os.path.isfile(filepath2) != True:
+        func.copy_request(filepath, "C:\Cyber check 2 2.7 new")
+    assert os.path.isfile(filepath2) == True
+
+    func.delete_request("screen.jpg")
+    if os.path.isfile("screen.jpg") != True:
+        func.take_screenshot_request()
+    assert os.path.isfile("screen.jpg") == True
 
     main()
