@@ -14,7 +14,7 @@ def dir_request(path):
     get path
     get: path
     returns list of files
-    returns: files_list
+    :returns: files_list
     """
     files_list = glob.glob(path+'\\*.*')
     files_list=",".join(files_list)
@@ -39,10 +39,8 @@ def copy_request(C1,C2):
 
 def execute_request(path):
     """
-    get path
-    get: path
-    returns list of files
-    returns: files_list
+    :param path: to the app
+    :return: if works or not
     """
     comment = "works"
     try:
@@ -54,9 +52,8 @@ def execute_request(path):
 
 def take_screenshot_request():
     """
-    get path to a file
-    get: path
-    deletes the file
+    take a screenshot
+    :return: if sucssided or not
     """
     try:
         image = pyautogui.screenshot()
@@ -66,14 +63,14 @@ def take_screenshot_request():
         return "couldnt take a pic"
 
 def send_photo_request():
-     """
-        get path
-        get: path
-        returns list of files
-        returns: files_list
-        """
-
-     with open("screen.jpg", "rb") as imageFile:
-         comment = base64.b64encode(imageFile.read())
-     comment = comment.decode()
-     return comment
+    """
+    open to the client the photo he took
+    :return: the photo
+    """
+    if os.path.isfile("screen.jpg")==True:
+        with open("screen.jpg", "rb") as imageFile:
+            comment = base64.b64encode(imageFile.read())
+        comment = comment.decode()
+    else:
+        comment = "error"
+    return comment
